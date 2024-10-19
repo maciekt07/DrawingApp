@@ -70,3 +70,18 @@ func GetDrawingsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(drawings)
 }
+
+// TODO: implement this
+// func DeleteAllDrawingsHandler(w http.ResponseWriter, r *http.Request) {
+// 	fmt.Println("DeleteAllDrawingsHandler")
+// 	if r.Method != http.MethodDelete {
+// 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+// 		return
+// 	}
+// 	if _, err := db.DB.Exec("DELETE FROM drawings"); err != nil {
+// 		log.Println("Error deleting drawings:", err)
+// 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+// 		return
+// 	}
+// 	w.WriteHeader(http.StatusNoContent)
+// }

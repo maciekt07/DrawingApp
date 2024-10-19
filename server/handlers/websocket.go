@@ -7,12 +7,13 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// upgrade the http connection to a websocket connection
 var upgrader = websocket.Upgrader{
     CheckOrigin: func(r *http.Request) bool {
         return true
     },
 }
-
+// active websocket connections
 var clients = make(map[*websocket.Conn]bool)
 
 type Point struct {
@@ -25,6 +26,7 @@ type DrawingMessage struct {
 	Color string  `json:"color"`
 }
 
+// handles incoming WebSocket connections
 func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -37,7 +39,7 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	defer delete(clients, conn)
 
 	log.Println("Client connected:", conn.RemoteAddr())
-
+	// listen for incoming messages from the client
 	for {
 		var msg DrawingMessage
 		if err := conn.ReadJSON(&msg); err != nil {
@@ -47,7 +49,7 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		broadcast(msg)
 	}
 }
-
+// sends the drawing message to all connected clients
 func broadcast(msg DrawingMessage) {
 	for client := range clients {
 		if err := client.WriteJSON(msg); err != nil {

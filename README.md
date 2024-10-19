@@ -6,6 +6,12 @@ A real-time drawing application built with Go for the backend and React with Typ
 <img src="https://go-skill-icons.vercel.app/api/icons?i=go,sqlite,react,ts,zustand,vite" />
 </p>
 
+### Preview
+
+<p align="center">
+<img width="500px" src="preview.png" alt="Preview" />
+</p>
+
 ### Installation
 
 1. Clone the repository:

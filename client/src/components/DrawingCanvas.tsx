@@ -6,7 +6,7 @@ const DrawingCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<Point[]>([]);
-  const [currentColor, setCurrentColor] = useState<string>("#000000");
+  const [currentColor, setCurrentColor] = useState<string>("#ffffff");
   const { drawings, setDrawings, addDrawing } = useDrawingStore();
   const socketRef = useRef<WebSocket | null>(null);
 
@@ -86,7 +86,7 @@ const DrawingCanvas: React.FC = () => {
     if (currentPath.length) {
       const newDrawing = { path: currentPath, color: currentColor };
       addDrawing(newDrawing);
-      sendDrawingToWebSocket(newDrawing);
+      socketRef.current?.send(JSON.stringify(newDrawing));
       saveDrawingToBackend(newDrawing);
       setCurrentPath([]);
     }
@@ -103,10 +103,6 @@ const DrawingCanvas: React.FC = () => {
     } catch (error) {
       console.error("Error saving drawing:", error);
     }
-  };
-
-  const sendDrawingToWebSocket = (drawing: Drawing) => {
-    socketRef.current?.send(JSON.stringify(drawing));
   };
 
   return (
