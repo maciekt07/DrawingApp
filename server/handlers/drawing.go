@@ -8,9 +8,8 @@ import (
 	"server/db"
 	"server/models"
 )
-
-
 func SaveDrawingHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("SaveDrawingHandler")
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
@@ -23,8 +22,7 @@ func SaveDrawingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save drawing to database
-	stmt, err := db.DB.Prepare("INSERT INTO drawings (x, y, color) VALUES (?, ?, ?)")
-    fmt.Println(stmt)
+	stmt, err := db.DB.Prepare("INSERT INTO drawings (path, color) VALUES (?, ?)")
 	if err != nil {
 		log.Println("Error preparing statement:", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -32,7 +30,8 @@ func SaveDrawingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer stmt.Close()
 
-	if _, err := stmt.Exec(drawing.X, drawing.Y, drawing.Color); err != nil {
+	pathJSON, _ := json.Marshal(drawing.Path)
+	if _, err := stmt.Exec(pathJSON, drawing.Color); err != nil {
 		log.Println("Error executing statement:", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -41,16 +40,11 @@ func SaveDrawingHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// retrieves all drawings from the database
 func GetDrawingsHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		return
-	}
-
-	rows, err := db.DB.Query("SELECT id, x, y, color FROM drawings")
+	rows, err := db.DB.Query("SELECT id, path, color FROM drawings")
 	if err != nil {
-		log.Println("Error querying database:", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		http.Error(w, "Error retrieving drawings", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -58,10 +52,18 @@ func GetDrawingsHandler(w http.ResponseWriter, r *http.Request) {
 	var drawings []models.Drawing
 	for rows.Next() {
 		var drawing models.Drawing
-		if err := rows.Scan(&drawing.ID, &drawing.X, &drawing.Y, &drawing.Color); err != nil {
-			log.Println("Error scanning row:", err)
-			continue
+		var pathJSON string
+
+		if err := rows.Scan(&drawing.ID, &pathJSON, &drawing.Color); err != nil {
+			http.Error(w, "Error scanning drawing", http.StatusInternalServerError)
+			return
 		}
+
+		if err := json.Unmarshal([]byte(pathJSON), &drawing.Path); err != nil {
+			http.Error(w, "Error unmarshalling drawing path", http.StatusInternalServerError)
+			return
+		}
+
 		drawings = append(drawings, drawing)
 	}
 
