@@ -8,9 +8,9 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+    CheckOrigin: func(r *http.Request) bool {
+        return true
+    },
 }
 
 var clients = make(map[*websocket.Conn]bool)
@@ -22,27 +22,28 @@ type DrawingMessage struct {
 }
 
 func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println("Error while upgrading connection:", err)
-		return
-	}
-	defer conn.Close()
+    conn, err := upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        log.Println("Error while upgrading connection:", err)
+        return
+    }
+    defer conn.Close()
 
-	clients[conn] = true
-	defer delete(clients, conn)
+    clients[conn] = true
+    defer delete(clients, conn)
 
-	log.Println("Client connected:", conn.RemoteAddr())
+    log.Println("Client connected:", conn.RemoteAddr())
 
-	for {
-		var msg DrawingMessage
-		if err := conn.ReadJSON(&msg); err != nil {
-			log.Println("Error while reading message:", err)
-			break
-		}
-		broadcast(msg)
-	}
+    for {
+        var msg DrawingMessage
+        if err := conn.ReadJSON(&msg); err != nil {
+            log.Println("Error while reading message:", err)
+            break
+        }
+        broadcast(msg)
+    }
 }
+
 
 func broadcast(msg DrawingMessage) {
 	for client := range clients {

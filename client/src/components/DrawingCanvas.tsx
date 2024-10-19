@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from "react";
 import { useDrawingStore } from "../store/store";
 import { Drawing } from "../types/types";
 
-// TODO: rewrite this completely
 const DrawingCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { drawings, addDrawing, setDrawings } = useDrawingStore();
@@ -31,38 +30,49 @@ const DrawingCanvas: React.FC = () => {
 
     if (ctx && canvas) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawings.forEach(({ x, y, color }) => {
+      (drawings || []).forEach(({ x, y, color }) => {
         ctx.fillStyle = color;
         ctx.fillRect(x, y, 5, 5);
       });
     }
   }, [drawings]);
 
-  // WebSocket connection
   useEffect(() => {
-    const socket = new WebSocket("ws://localhost:8080/ws");
-    socketRef.current = socket;
+    const connectWebSocket = () => {
+      const socket = new WebSocket("ws://localhost:8080/ws");
+      socketRef.current = socket;
 
-    socket.onopen = () => {
-      console.log("WebSocket connection established");
+      socket.onopen = () => {
+        console.log("WebSocket connection established");
+      };
+
+      socket.onmessage = (event) => {
+        const message: Drawing = JSON.parse(event.data);
+        addDrawing(message);
+        saveDrawingToDB(message);
+      };
+
+      socket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+
+      socket.onclose = (event) => {
+        console.error("WebSocket connection closed:", event);
+        if (event.code !== 1000) {
+          setTimeout(() => {
+            console.log("Attempting to reconnect...");
+            connectWebSocket();
+          }, 1000);
+        }
+      };
     };
 
-    socket.onmessage = (event) => {
-      const message: Drawing = JSON.parse(event.data);
-      addDrawing(message);
-      saveDrawingToDB(message); // Save drawing to DB on receiving a message
-    };
-
-    socket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    socket.onclose = () => {
-      console.error("WebSocket connection closed");
-    };
+    connectWebSocket();
 
     return () => {
-      socket.close();
+      if (socketRef.current) {
+        socketRef.current.close();
+      }
     };
   }, [addDrawing]);
 
@@ -98,7 +108,6 @@ const DrawingCanvas: React.FC = () => {
     }
   };
 
-  // save drawing to the database
   const saveDrawingToDB = async (drawing: Drawing) => {
     await fetch("http://localhost:8080/drawings", {
       method: "POST",
