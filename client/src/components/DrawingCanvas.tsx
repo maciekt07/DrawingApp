@@ -11,110 +11,93 @@ const DrawingCanvas: React.FC = () => {
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    // Initialize WebSocket connection
-    socketRef.current = new WebSocket("ws://localhost:8080/ws");
-
-    socketRef.current.onmessage = (event) => {
-      const newDrawing: Drawing = JSON.parse(event.data);
-      addDrawing(newDrawing);
+    const initSocket = () => {
+      socketRef.current = new WebSocket("ws://localhost:8080/ws");
+      socketRef.current.onmessage = (event) => {
+        const newDrawing: Drawing = JSON.parse(event.data);
+        addDrawing(newDrawing);
+      };
     };
 
+    const fetchDrawings = async () => {
+      try {
+        const response = await fetch("/api/drawings");
+        const data: Drawing[] = await response.json();
+        setDrawings(data);
+      } catch (error) {
+        console.error("Error fetching drawings:", error);
+      }
+    };
+
+    initSocket();
     fetchDrawings();
-    return () => {
-      socketRef.current?.close();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    return () => socketRef.current?.close();
+  }, [addDrawing, setDrawings]);
 
   useEffect(() => {
-    drawFetchedDrawings(drawings);
-  }, [drawings]);
-
-  const fetchDrawings = async () => {
-    try {
-      const response = await fetch("http://localhost:8080/drawings");
-      const data: Drawing[] = await response.json();
-      setDrawings(data);
-    } catch (error) {
-      console.error("Error fetching drawings:", error);
-    }
-  };
-
-  const drawFetchedDrawings = (fetchedDrawings: Drawing[]) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-
-    if (ctx && canvas) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height); // clear canvas first
-      fetchedDrawings.forEach(({ path, color }) => {
-        if (path && Array.isArray(path) && path.length > 0) {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (ctx && canvasRef.current) {
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      drawings.forEach(({ path, color }) => {
+        if (path.length) {
           ctx.strokeStyle = color;
           ctx.beginPath();
           ctx.moveTo(path[0].x, path[0].y);
-          path.forEach((point) => {
-            ctx.lineTo(point.x, point.y);
-          });
+          path.forEach(({ x, y }) => ctx.lineTo(x, y));
           ctx.stroke();
         }
       });
     }
-  };
+  }, [drawings]);
 
-  const startDrawing = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const startDrawing = ({
+    clientX,
+    clientY,
+  }: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
-
     if (ctx && canvas) {
       setIsDrawing(true);
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-
+      const { left, top } = canvas.getBoundingClientRect();
+      ctx.strokeStyle = currentColor;
       ctx.beginPath();
-      ctx.moveTo(x, y);
-      setCurrentPath([{ x, y }]);
+      ctx.moveTo(clientX - left, clientY - top);
+      setCurrentPath([{ x: clientX - left, y: clientY - top }]);
     }
   };
 
-  const draw = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const draw = ({ clientX, clientY }: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
-
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
-
     if (ctx && canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-
-      ctx.lineTo(x, y);
+      const { left, top } = canvas.getBoundingClientRect();
+      ctx.lineTo(clientX - left, clientY - top);
       ctx.stroke();
-
-      setCurrentPath((prev) => [...prev, { x, y }]);
+      setCurrentPath((prev) => [
+        ...prev,
+        { x: clientX - left, y: clientY - top },
+      ]);
     }
   };
 
   const stopDrawing = () => {
-    if (currentPath.length > 0) {
-      const newDrawing = {
-        path: currentPath,
-        color: currentColor,
-      };
+    if (currentPath.length) {
+      const newDrawing = { path: currentPath, color: currentColor };
       addDrawing(newDrawing);
       sendDrawingToWebSocket(newDrawing);
       saveDrawingToBackend(newDrawing);
+      setCurrentPath([]);
     }
     setIsDrawing(false);
-    setCurrentPath([]);
   };
 
   const saveDrawingToBackend = async (drawing: Drawing) => {
     try {
-      await fetch("http://localhost:8080/drawings", {
+      await fetch("/api/drawings", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(drawing),
       });
     } catch (error) {
@@ -123,33 +106,33 @@ const DrawingCanvas: React.FC = () => {
   };
 
   const sendDrawingToWebSocket = (drawing: Drawing) => {
-    if (socketRef.current) {
-      socketRef.current.send(JSON.stringify(drawing));
-    }
+    socketRef.current?.send(JSON.stringify(drawing));
   };
 
   return (
     <div>
-      <div>
-        <label>
+      <div className="color-picker-container">
+        <label className="color-label">
           Color:
           <input
             type="color"
             value={currentColor}
             onChange={(e) => setCurrentColor(e.target.value)}
+            className="color-input"
           />
         </label>
       </div>
-      <canvas
-        ref={canvasRef}
-        width={800}
-        height={600}
-        style={{ border: "1px solid black" }}
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-      />
+      <div className="canvas-container">
+        <canvas
+          ref={canvasRef}
+          width={800}
+          height={600}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+        />
+      </div>
     </div>
   );
 };

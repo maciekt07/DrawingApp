@@ -31,6 +31,7 @@ A real-time drawing application built with Go for the backend and React with Typ
    ```bash
    cd ..
    npm install
+   npm run dev
    ```
 
 > [!NOTE]  
