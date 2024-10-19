@@ -8,36 +8,36 @@ import (
 	"server/db"
 	"server/models"
 )
+
 func SaveDrawingHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("SaveDrawingHandler")
-	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		return
-	}
+    fmt.Println("SaveDrawingHandler")
+    if r.Method != http.MethodPost {
+        http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+        return
+    }
 
-	var drawing models.Drawing
-	if err := json.NewDecoder(r.Body).Decode(&drawing); err != nil {
-		http.Error(w, "Invalid drawing data", http.StatusBadRequest)
-		return
-	}
+    var drawing models.Drawing
+    if err := json.NewDecoder(r.Body).Decode(&drawing); err != nil {
+        http.Error(w, "Invalid drawing data", http.StatusBadRequest)
+        return
+    }
 
-	// Save drawing to database
-	stmt, err := db.DB.Prepare("INSERT INTO drawings (path, color) VALUES (?, ?)")
-	if err != nil {
-		log.Println("Error preparing statement:", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
-	defer stmt.Close()
+    stmt, err := db.DB.Prepare("INSERT INTO drawings (path, color) VALUES (?, ?)")
+    if err != nil {
+        log.Println("Error preparing statement:", err)
+        http.Error(w, "Internal server error", http.StatusInternalServerError)
+        return
+    }
+    defer stmt.Close()
 
-	pathJSON, _ := json.Marshal(drawing.Path)
-	if _, err := stmt.Exec(pathJSON, drawing.Color); err != nil {
-		log.Println("Error executing statement:", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
+    pathJSON, _ := json.Marshal(drawing.Path)
+    if _, err := stmt.Exec(pathJSON, drawing.Color); err != nil {
+        log.Println("Error executing statement:", err)
+        http.Error(w, "Internal server error", http.StatusInternalServerError)
+        return
+    }
 
-	w.WriteHeader(http.StatusCreated)
+    w.WriteHeader(http.StatusCreated)
 }
 
 // retrieves all drawings from the database

@@ -6,7 +6,7 @@ const DrawingCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<Point[]>([]);
-  const [currentColor, setCurrentColor] = useState<string>("black");
+  const [currentColor, setCurrentColor] = useState<string>("#000000");
   const { drawings, setDrawings, addDrawing } = useDrawingStore();
   const socketRef = useRef<WebSocket | null>(null);
 
@@ -16,7 +16,7 @@ const DrawingCanvas: React.FC = () => {
 
     socketRef.current.onmessage = (event) => {
       const newDrawing: Drawing = JSON.parse(event.data);
-      addDrawing(newDrawing); // Update the store with the new drawing
+      addDrawing(newDrawing);
     };
 
     fetchDrawings();
@@ -97,15 +97,29 @@ const DrawingCanvas: React.FC = () => {
   const stopDrawing = () => {
     if (currentPath.length > 0) {
       const newDrawing = {
-        id: Date.now(),
         path: currentPath,
         color: currentColor,
       };
       addDrawing(newDrawing);
       sendDrawingToWebSocket(newDrawing);
+      saveDrawingToBackend(newDrawing);
     }
     setIsDrawing(false);
     setCurrentPath([]);
+  };
+
+  const saveDrawingToBackend = async (drawing: Drawing) => {
+    try {
+      await fetch("http://localhost:8080/drawings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(drawing),
+      });
+    } catch (error) {
+      console.error("Error saving drawing:", error);
+    }
   };
 
   const sendDrawingToWebSocket = (drawing: Drawing) => {
