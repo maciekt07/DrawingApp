@@ -23,16 +23,18 @@ A real-time drawing application built with Go for the backend and React with Typ
    go run main.go
    ```
 
-   > [!NOTE]  
-   > The server will start running on port 8080.
+> [!NOTE]  
+> The server will start running on port 8080.
 
 3. Install frontend dependencies and run the client:
+
    ```bash
    cd ..
    npm install
    ```
-   > [!NOTE]  
-   > The client will start running on port 5173.
+
+> [!NOTE]  
+> The client will start running on port 5173.
 
 ### Credits
 
