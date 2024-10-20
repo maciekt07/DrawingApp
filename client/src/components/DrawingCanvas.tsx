@@ -87,22 +87,9 @@ const DrawingCanvas: React.FC = () => {
       const newDrawing = { path: currentPath, color: currentColor };
       addDrawing(newDrawing);
       socketRef.current?.send(JSON.stringify(newDrawing));
-      saveDrawingToBackend(newDrawing);
       setCurrentPath([]);
     }
     setIsDrawing(false);
-  };
-
-  const saveDrawingToBackend = async (drawing: Drawing) => {
-    try {
-      await fetch("/api/drawings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(drawing),
-      });
-    } catch (error) {
-      console.error("Error saving drawing:", error);
-    }
   };
 
   return (

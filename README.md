@@ -9,7 +9,7 @@ A real-time drawing application built with Go for the backend and React with Typ
 ### Preview
 
 <p align="center">
-<img width="500px" src="preview.png" alt="Preview" />
+<img width="650px" src="preview.png" alt="Preview" />
 </p>
 
 ### Installation
