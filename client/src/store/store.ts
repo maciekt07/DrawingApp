@@ -5,6 +5,7 @@ interface DrawingStore {
   drawings: Drawing[];
   addDrawing: (drawing: Drawing) => void;
   setDrawings: (drawings: Drawing[]) => void;
+  clearDrawings: () => void;
 }
 
 export const useDrawingStore = create<DrawingStore>((set) => ({
@@ -14,7 +15,10 @@ export const useDrawingStore = create<DrawingStore>((set) => ({
     set((state) => ({
       drawings: [...state.drawings, drawing],
     })),
-
+  clearDrawings: () =>
+    set(() => ({
+      drawings: [],
+    })),
   setDrawings: (drawings) => {
     if (Array.isArray(drawings)) {
       set({ drawings });

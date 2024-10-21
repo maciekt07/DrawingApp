@@ -7,15 +7,20 @@ const DrawingCanvas: React.FC = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<Point[]>([]);
   const [currentColor, setCurrentColor] = useState<string>("#ffffff");
-  const { drawings, setDrawings, addDrawing } = useDrawingStore();
+  const { drawings, setDrawings, addDrawing, clearDrawings } =
+    useDrawingStore();
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     const initSocket = () => {
       socketRef.current = new WebSocket("ws://localhost:8080/ws");
       socketRef.current.onmessage = (event) => {
-        const newDrawing: Drawing = JSON.parse(event.data);
-        addDrawing(newDrawing);
+        const newDrawing = JSON.parse(event.data);
+        if (newDrawing.type === "clear") {
+          clearDrawings(); // clear drawings when event is received
+        } else {
+          addDrawing(newDrawing);
+        }
       };
     };
 
@@ -33,7 +38,7 @@ const DrawingCanvas: React.FC = () => {
     fetchDrawings();
 
     return () => socketRef.current?.close();
-  }, [addDrawing, setDrawings]);
+  }, [addDrawing, clearDrawings, setDrawings]);
 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d");
@@ -92,6 +97,11 @@ const DrawingCanvas: React.FC = () => {
     setIsDrawing(false);
   };
 
+  const clearCanvas = () => {
+    clearDrawings();
+    socketRef.current?.send(JSON.stringify({ type: "clear" })); // Send clear event to all clients
+  };
+
   return (
     <div>
       <div className="color-picker-container">
@@ -105,6 +115,7 @@ const DrawingCanvas: React.FC = () => {
           />
         </label>
       </div>
+      <button onClick={clearCanvas}>Clear</button>
       <div className="canvas-container">
         <canvas
           ref={canvasRef}
