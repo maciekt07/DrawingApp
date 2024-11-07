@@ -9,6 +9,7 @@ import (
 
 var DB *sql.DB
 
+// init the sqlite database and create the drawings table if it doesn't exist
 func InitDB() {
 	var err error
 	DB, err = sql.Open("sqlite3", "./drawings.db")

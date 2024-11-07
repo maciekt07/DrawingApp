@@ -27,6 +27,12 @@ canvas {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
+.server-status {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 .color-picker-container {
   display: flex;
   justify-content: center;

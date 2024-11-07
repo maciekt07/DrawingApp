@@ -10,7 +10,6 @@ interface DrawingStore {
 
 export const useDrawingStore = create<DrawingStore>((set) => ({
   drawings: [],
-
   addDrawing: (drawing) =>
     set((state) => ({
       drawings: [...state.drawings, drawing],

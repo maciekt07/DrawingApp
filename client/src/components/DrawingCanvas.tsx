@@ -10,10 +10,18 @@ const DrawingCanvas: React.FC = () => {
   const { drawings, setDrawings, addDrawing, clearDrawings } =
     useDrawingStore();
   const socketRef = useRef<WebSocket | null>(null);
+  const [serverStatus, setServerStatus] = useState<"online" | "offline">(
+    "offline"
+  );
 
   useEffect(() => {
     const initSocket = () => {
       socketRef.current = new WebSocket("ws://localhost:8080/ws");
+
+      socketRef.current.onopen = () => setServerStatus("online");
+      socketRef.current.onclose = () => setServerStatus("offline"); //TODO: add reconnection logic
+      socketRef.current.onerror = () => setServerStatus("offline");
+
       socketRef.current.onmessage = (event) => {
         const newDrawing = JSON.parse(event.data);
         if (newDrawing.type === "clear") {
@@ -89,7 +97,7 @@ const DrawingCanvas: React.FC = () => {
 
   const stopDrawing = () => {
     if (currentPath.length) {
-      const newDrawing = { path: currentPath, color: currentColor };
+      const newDrawing: Drawing = { path: currentPath, color: currentColor };
       addDrawing(newDrawing);
       socketRef.current?.send(JSON.stringify(newDrawing));
       setCurrentPath([]);
@@ -104,6 +112,14 @@ const DrawingCanvas: React.FC = () => {
 
   return (
     <div>
+      <div className="server-status">
+        WebSocket Status:{" "}
+        <span
+          style={{ color: serverStatus === "offline" ? "#ff4343" : "#52ff49" }}
+        >
+          {serverStatus}
+        </span>
+      </div>
       <div className="color-picker-container">
         <label className="color-label">
           Color:

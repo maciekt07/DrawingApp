@@ -10,3 +10,9 @@ type Drawing struct {
 	Path  []Point `json:"path"`
 	Color string  `json:"color"`
 }
+
+type DrawingMessage struct {
+    Type  string  `json:"type,omitempty"`
+	Path  []Point `json:"path"`
+	Color string  `json:"color"`
+}

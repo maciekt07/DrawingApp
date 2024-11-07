@@ -22,7 +22,7 @@ func main() {
     r.HandleFunc("/ws", handlers.WebSocketHandler)
 
     // Drawings route
-    r.HandleFunc("/drawings", handlers.SaveDrawingHandler).Methods("POST")
+    r.HandleFunc("/drawings", handlers.SaveDrawingHandler).Methods("POST") // this is not being used
     r.HandleFunc("/drawings", handlers.GetDrawingsHandler).Methods("GET")
     
     http.HandleFunc("/health", healthCheckHandler)
